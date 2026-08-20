@@ -1,11 +1,24 @@
 {
-     "name": "walker-webs-backend",
-     "type": "module",
-     "dependencies": {
-       "express": "^4.18.2",
-       "cors": "^2.8.5",
-       "openai": "^4.28.0",
-       "dotenv": "^16.4.1",
-       "nanoid": "^5.0.4"
-     }
-   }
+  "name": "walker-webs-backend",
+  "version": "1.0.0",
+  "description": "Backend for WALKER WEBS AI Website Generator",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "ai",
+    "website-generator",
+    "groq"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "groq-sdk": "^0.7.0",
+    "dotenv": "^16.4.1",
+    "nanoid": "^5.0.4"
+  }
+}

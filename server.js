@@ -1,47 +1,55 @@
-// server.js
+// server.js - WALKER WEBS with GROQ
 import express from "express";
 import cors from "cors";
-import OpenAI from "openai";
+import Groq from "groq-sdk"; // <-- CHANGED
 import dotenv from "dotenv";
+import { nanoid } from "nanoid";
+import fs from "fs";
+import path from "path";
 
 dotenv.config();
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({limit: '10mb'}));
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY // put key in .env file
-});
+const PORT = process.env.PORT || 3001;
 
-// This is what WALKER WEBS will call
+const PUBLISH_FOLDER = './published';
+if (!fs.existsSync(PUBLISH_FOLDER)) fs.mkdirSync(PUBLISH_FOLDER);
+
+// CHANGED: Use Groq instead of OpenAI
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
 app.post("/api/generate", async (req, res) => {
-  const { prompt } = req.body;
-
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-5", // or gpt-4o
-      messages: [
-        {
-          role: "system",
-          content: `You are WALKER WEBS AI. Generate a complete single-file HTML website with TailwindCSS.
-          Requirements:
-          - Return ONLY raw HTML code. No explanations, no markdown.
-          - Use Tailwind via CDN
-          - Make it modern, dark theme, responsive
-          - User prompt: ${prompt}`
-        }
-      ],
+    const { prompt } = req.body;
+    
+    // CHANGED: Groq API call
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.1-70b-versatile", // Free + best model
+      messages: [{ 
+        role: "user", 
+        content: `Generate a complete single-file HTML website with TailwindCSS CDN. Make it beautiful, responsive, and modern. Return ONLY raw HTML code, no explanation. Prompt: ${prompt}` 
+      }],
       temperature: 0.7,
-      max_tokens: 3000
+      max_tokens: 4000
     });
-
-    const html = completion.choices[0].message.content;
-    res.json({ html });
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to generate" });
+    
+    res.json({ html: completion.choices[0].message.content });
+  } catch (error) { 
+    console.log(error);
+    res.status(500).json({ error: error.message }); 
   }
 });
 
-app.listen(3001, () => console.log("WALKER WEBS Backend running on http://localhost:3001"));
+app.post("/api/publish", (req, res) => {
+  const { html } = req.body;
+  const id = nanoid(8);
+  const filename = `${id}.html`;
+  fs.writeFileSync(path.join(PUBLISH_FOLDER, filename), html);
+  res.json({ url: `/site/${filename}` });
+});
+
+app.use('/site', express.static(PUBLISH_FOLDER));
+
+app.listen(PORT, () => console.log(`WALKER WEBS Backend running on port ${PORT}`));
